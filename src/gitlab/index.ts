@@ -6,7 +6,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import fetch from "node-fetch";
+import fetch, { Response } from "node-fetch";
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import {
@@ -63,6 +63,12 @@ if (!GITLAB_PERSONAL_ACCESS_TOKEN) {
   process.exit(1);
 }
 
+async function formatError(response: Response) {
+  const body = await response.json() as { error?: string; message?: string };
+  const errorMessage = body.error || body.message || response.text();
+  return `GitLab API error: ${response.statusText} - ${errorMessage}`;
+}
+
 async function forkProject(
   projectId: string,
   namespace?: string
@@ -79,7 +85,7 @@ async function forkProject(
   });
 
   if (!response.ok) {
-    throw new Error(`GitLab API error: ${response.statusText}`);
+    throw new Error(await formatError(response));
   }
 
   return GitLabForkSchema.parse(await response.json());
@@ -105,7 +111,7 @@ async function createBranch(
   );
 
   if (!response.ok) {
-    throw new Error(`GitLab API error: ${response.statusText}`);
+    throw new Error(await formatError(response));
   }
 
   return GitLabReferenceSchema.parse(await response.json());
@@ -122,7 +128,7 @@ async function getDefaultBranchRef(projectId: string): Promise<string> {
   );
 
   if (!response.ok) {
-    throw new Error(`GitLab API error: ${response.statusText}`);
+    throw new Error(await formatError(response));
   }
 
   const project = GitLabRepositorySchema.parse(await response.json());
@@ -147,7 +153,7 @@ async function getFileContents(
   });
 
   if (!response.ok) {
-    throw new Error(`GitLab API error: ${response.statusText}`);
+    throw new Error(await formatError(response));
   }
 
   const data = GitLabContentSchema.parse(await response.json());
@@ -182,7 +188,7 @@ async function createIssue(
   );
 
   if (!response.ok) {
-    throw new Error(`GitLab API error: ${response.statusText}`);
+    throw new Error(await formatError(response));
   }
 
   return GitLabIssueSchema.parse(await response.json());
@@ -212,7 +218,7 @@ async function createMergeRequest(
   );
 
   if (!response.ok) {
-    throw new Error(`GitLab API error: ${response.statusText}`);
+    throw new Error(await formatError(response));
   }
 
   return GitLabMergeRequestSchema.parse(await response.json());
@@ -255,7 +261,7 @@ async function createOrUpdateFile(
   });
 
   if (!response.ok) {
-    throw new Error(`GitLab API error: ${response.statusText}`);
+    throw new Error(await formatError(response));
   }
 
   return GitLabCreateUpdateFileResponseSchema.parse(await response.json());
@@ -285,7 +291,7 @@ async function createTree(
   );
 
   if (!response.ok) {
-    throw new Error(`GitLab API error: ${response.statusText}`);
+    throw new Error(await formatError(response));
   }
 
   return GitLabTreeSchema.parse(await response.json());
@@ -318,7 +324,7 @@ async function createCommit(
   );
 
   if (!response.ok) {
-    throw new Error(`GitLab API error: ${response.statusText}`);
+    throw new Error(await formatError(response));
   }
 
   return GitLabCommitSchema.parse(await response.json());
@@ -341,7 +347,7 @@ async function searchProjects(
   });
 
   if (!response.ok) {
-    throw new Error(`GitLab API error: ${response.statusText}`);
+    throw new Error(await formatError(response));
   }
 
   const projects = await response.json();
@@ -369,7 +375,7 @@ async function createRepository(
   });
 
   if (!response.ok) {
-    throw new Error(`GitLab API error: ${response.statusText}`);
+    throw new Error(await formatError(response));
   }
 
   return GitLabRepositorySchema.parse(await response.json());
